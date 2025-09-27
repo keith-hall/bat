@@ -167,6 +167,46 @@ fn line_numbers() {
 }
 
 #[test]
+fn line_numbers_with_number_flag_non_interactive() {
+    // Test that -n (--number) flag shows line numbers even when output is non-interactive (piped)
+    // This validates that the forced style components override the auto-detection
+    // of non-interactive output. During integration tests, bat detects non-interactive output
+    // by default, so this test verifies that -n overrides that detection.
+    bat()
+        .arg("multiline.txt")
+        .arg("-n")  // equivalent to --number and --style=numbers
+        .assert()
+        .success()
+        .stdout("   1 line 1\n   2 line 2\n   3 line 3\n   4 line 4\n   5 line 5\n   6 line 6\n   7 line 7\n   8 line 8\n   9 line 9\n  10 line 10\n");
+}
+
+#[test]
+fn line_numbers_with_style_numbers_non_interactive() {
+    // Test that --style=numbers respects --decorations=auto behavior in non-interactive mode
+    // Unlike -n flag, --style=numbers goes through normal style processing which respects
+    // interactive terminal detection. This requires --decorations=always to override auto-detection.
+    bat()
+        .arg("multiline.txt")
+        .arg("--style=numbers")
+        .arg("--decorations=always")
+        .assert()
+        .success()
+        .stdout("   1 line 1\n   2 line 2\n   3 line 3\n   4 line 4\n   5 line 5\n   6 line 6\n   7 line 7\n   8 line 8\n   9 line 9\n  10 line 10\n");
+}
+
+#[test]
+fn default_behavior_non_interactive_no_decorations() {
+    // Test that default behavior (no -n, no --style) shows no decorations when non-interactive (piped)
+    // This validates that --decorations=auto correctly detects non-interactive output
+    // During integration tests, bat automatically detects non-interactive output
+    bat()
+        .arg("multiline.txt")
+        .assert()
+        .success()
+        .stdout("line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\n");
+}
+
+#[test]
 fn line_range_2_3() {
     bat()
         .arg("multiline.txt")
