@@ -261,7 +261,8 @@ impl App {
                     .get_one::<String>("decorations")
                     .map(|s| s.as_str())
                     == Some("always")
-                || self.matches.get_flag("force-colorization")),
+                || self.matches.get_flag("force-colorization")
+                || self.matches.get_flag("number")),
             tab_width: self
                 .matches
                 .get_one::<String>("tabs")
