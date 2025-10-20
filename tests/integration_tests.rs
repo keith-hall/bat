@@ -1062,6 +1062,20 @@ fn pager_value_bat() {
         .stderr(predicate::str::contains("bat as a pager is disallowed"));
 }
 
+/// Regression test for https://github.com/sharkdp/bat/issues/XXXX
+/// When using --pager=builtin with piped input and output, the builtin pager
+/// should fall back to stdout (like less does) rather than silently failing.
+#[test]
+fn builtin_pager_with_piped_output() {
+    bat()
+        .arg("--pager=builtin")
+        .arg("--paging=always")
+        .write_stdin("hello from stdin\n")
+        .assert()
+        .success()
+        .stdout("hello from stdin\n");
+}
+
 /// We shall use less instead of most if PAGER is used since PAGER
 /// is a generic env var
 #[test]
