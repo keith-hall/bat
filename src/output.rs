@@ -99,7 +99,14 @@ impl OutputType {
         }
 
         if pager.kind == PagerKind::Builtin {
-            return Ok(OutputType::BuiltinPager(BuiltinPager::new()));
+            // The builtin pager requires stdout to be a TTY. If it's not (e.g., when
+            // output is piped), fall back to stdout to avoid silent failure.
+            use std::io::IsTerminal;
+            if io::stdout().is_terminal() {
+                return Ok(OutputType::BuiltinPager(BuiltinPager::new()));
+            } else {
+                return Ok(OutputType::stdout());
+            }
         }
 
         let resolved_path = match grep_cli::resolve_binary(&pager.bin) {
