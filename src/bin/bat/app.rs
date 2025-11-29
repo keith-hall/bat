@@ -199,8 +199,8 @@ impl App {
             )
         });
 
-        // Check if help was requested - help should go through the same code path
-        // but be forgiving of config file errors
+        // Check if help was requested - help should read the config file but be
+        // forgiving of invalid arguments (so configured theme etc. can be used)
         let help_requested =
             wild::args_os().any(|arg| matches!(arg.to_str(), Some("-h" | "--help")));
 
@@ -222,27 +222,22 @@ impl App {
             cli_args.for_each(|a| args.push(a));
 
             args
-        } else if help_requested {
-            // Help goes through the normal config path but only uses env vars for themes
-            // to avoid failing on invalid config options
-            let mut cli_args = wild::args_os();
-            let mut args = get_args_from_env_vars();
-
-            // Put the zero-th CLI argument (program name) first
-            args.insert(0, cli_args.next().unwrap());
-
-            // .. and the rest at the end (includes --help and other CLI args)
-            cli_args.for_each(|a| args.push(a));
-            args
         } else {
             let mut cli_args = wild::args_os();
 
             // Read arguments from bats config file
-            let mut args = match get_args_from_env_opts_var() {
+            let args = match get_args_from_env_opts_var() {
                 Some(result) => result,
                 None => get_args_from_config_file(),
-            }
-            .map_err(|_| "Could not parse configuration file")?;
+            };
+
+            // For help, ignore config file parse errors (use empty config instead)
+            // For non-help, propagate the error
+            let mut args = if help_requested {
+                args.unwrap_or_default()
+            } else {
+                args.map_err(|_| "Could not parse configuration file")?
+            };
 
             // Selected env vars supersede config vars
             args.extend(get_args_from_env_vars());
@@ -255,7 +250,25 @@ impl App {
             args
         };
 
-        Ok(clap_app::build_app(interactive_output).get_matches_from(args))
+        // For help, try parsing with config, and if clap fails (e.g., invalid
+        // argument in config), fall back to parsing without config file args
+        if help_requested {
+            let app = clap_app::build_app(interactive_output);
+            match app.try_get_matches_from(args.clone()) {
+                Ok(matches) => Ok(matches),
+                Err(_) => {
+                    // Config has invalid arguments, fall back to just env vars + CLI args
+                    let mut cli_args = wild::args_os();
+                    let mut fallback_args = get_args_from_env_vars();
+                    fallback_args.insert(0, cli_args.next().unwrap());
+                    cli_args.for_each(|a| fallback_args.push(a));
+
+                    Ok(clap_app::build_app(interactive_output).get_matches_from(fallback_args))
+                }
+            }
+        } else {
+            Ok(clap_app::build_app(interactive_output).get_matches_from(args))
+        }
     }
 
     pub fn config(&self, inputs: &[Input]) -> Result<Config<'_>> {
