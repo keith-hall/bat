@@ -1,0 +1,3 @@
+[case_sensitive_mappings]
+# Skylark BUILD files use Python syntax
+"Python" = ["BUILD"]
