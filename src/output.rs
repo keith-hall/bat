@@ -213,6 +213,13 @@ impl OutputType {
         false
     }
 
+    #[cfg(feature = "paging")]
+    pub fn end_of_output(&self) {
+        if let OutputType::BuiltinPager(ref pager) = self {
+            let _ = pager.pager.end_of_output();
+        }
+    }
+
     pub fn handle<'a>(&'a mut self) -> Result<OutputHandle<'a>> {
         Ok(match *self {
             #[cfg(feature = "paging")]

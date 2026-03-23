@@ -135,6 +135,11 @@ impl Controller<'_> {
             }
         }
 
+        #[cfg(feature = "paging")]
+        if let Some(ref output_type) = output_type_opt {
+            output_type.end_of_output();
+        }
+
         Ok(no_errors)
     }
 
