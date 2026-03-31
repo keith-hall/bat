@@ -1474,6 +1474,9 @@ fn diagnostic_sanity_check() {
         .assert()
         .success()
         .stdout(predicate::str::contains("BAT_PAGER="))
+        .stdout(predicate::str::contains("BAT_THEME_DARK="))
+        .stdout(predicate::str::contains("BAT_THEME_LIGHT="))
+        .stdout(predicate::str::contains("Detected terminal color scheme"))
         .stderr("");
 }
 
